@@ -20,10 +20,10 @@ def print_trainable_parameters(model: PeftModel) -> None:
 
 def get_prompts_for_correct_experiment(experiment_name: str=EXPERIMENT) -> str:
     map_experiment_name_to_prompts = {
-        'experiment_1': 'prompt_data_all.json',
-        'experiment_2': 'prompt_data_f.json',
-        'experiment_3': 'prompt_data_annotated.json',
-        'experiment_4': 'prompt_data_generated.json'
+        'experiment_1': 'prompt_library/prompt_data_all.json',
+        'experiment_2': 'prompt_library/prompt_data_f.json',
+        'experiment_3': 'prompt_library/prompt_data_annotated.json',
+        'experiment_4': 'prompt_library/prompt_data_generated.json'
     }
     try:
       collection_name = map_experiment_name_to_prompts[experiment_name]
@@ -49,10 +49,10 @@ def set_different_steps_per_experiment(experiment_name: str=EXPERIMENT) -> str:
 
 def get_local_peft_model(experiment_name: str=EXPERIMENT, initial: bool=True) -> str:
     map_experiment_name_to_model = {
-          'experiment_1': 'experiment_1_model',
-          'experiment_2': 'experiment_2_model',
-          'experiment_3': 'experiment_3_model',
-          'experiment_4': 'experiment_4_model'
+          'experiment_1': 'models/experiment_1_model',
+          'experiment_2': 'models/experiment_2_model',
+          'experiment_3': 'models/experiment_3_model',
+          'experiment_4': 'models/experiment_4_model'
     }
     try:
       return map_experiment_name_to_model[experiment_name]
