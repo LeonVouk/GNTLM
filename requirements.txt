@@ -1,7 +1,8 @@
 beautifulsoup4
-json
 nltk
 openai
+fire
+langchain
 wikipedia-api
 bitsandbytes==0.39.0
 torch==2.0.1
