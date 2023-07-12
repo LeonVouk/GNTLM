@@ -1,9 +1,10 @@
+import os
 import openai
 import json
 import random
 import time
 
-OPEN_AI_API_KEY = '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'
+OPEN_AI_API_KEY = os.environ['OPEN_AI_API_KEY']
 openai.api_key = OPEN_AI_API_KEY
 
 
