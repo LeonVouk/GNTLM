@@ -208,7 +208,7 @@ def main(text: str='',
                                       placeholder="The following is a conversation between a human and an guidance counseling AI. The AI is talkative and provides lots of specific details from its context and focuses on answering the question posed by the human. If the AI does not know the answer to a question, it truthfully says it does not know.")
             update_prompt_button = gr.Button("Change initial prompt.")
         text_button.click(normalize_response, inputs=text_input, outputs=text_output)
-        forget_button.click(reset_chat, inputs=chat)
+        forget_button.click(reset_chat)
         update_prompt_button.click(update_prompt, inputs=prompt_input)
 
     demo.launch()
