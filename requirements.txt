@@ -1,6 +1,7 @@
 beautifulsoup4
 nltk
 openai
+gradio
 fire
 langchain
 wikipedia-api

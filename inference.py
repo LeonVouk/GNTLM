@@ -2,6 +2,7 @@ import os
 
 import bitsandbytes as bnb
 import fire
+import gradio as gr
 import langchain
 from langchain.llms import HuggingFacePipeline
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
@@ -23,6 +24,8 @@ from transformers import (
 )
 
 from utils.model_utils import get_local_peft_model
+# import locale
+# locale.getpreferredencoding = lambda: "UTF-8"
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 DEVICE = 'cuda:0'
@@ -53,16 +56,14 @@ def normalize_response(chat_chain: langchain.chains.ConversationChain, query: st
 
 def load_local_model_and_tokenizer(lora_config: str='', experiment_name: str=EXPERIMENT) -> tuple:
     GNTLM = get_local_peft_model(experiment_name=experiment_name)
-    peft_model = f'/{GNTLM}'
+    peft_model = f'{GNTLM}'
 
     if not lora_config:
-        bnb_config = LoraConfig(
-            r=16,
-            lora_alpha=32,
-            target_modules=['query_key_value'],
-            lora_dropout=0.05,
-            bias='none',
-            task_type='CAUSAL_LM'
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type='nf4',
+            bnb_4bit_compute_dtype=torch.bfloat16
         )
     else:
         bnb_config = lora_config
@@ -102,7 +103,7 @@ def generate_pipeline(model,
                   stopping_criteria,
                   task: str='text-generation',
                   temperature: float=0.7,
-                  max_new_tokens: int=128) -> transformers.pipeline():
+                  max_new_tokens: int=128) -> transformers.pipeline:
 
     generate_text = transformers.pipeline(
         model=model,
@@ -174,12 +175,43 @@ def main(text: str='',
                                  temperature=temperature,
                                  max_new_tokens=max_new_tokens)
 
-    # TODO fix implemetation to not overwrite memory for every use
-    # TODO add gradio support
     chat = langchain_config(pipeline=pipeline, initial_prompt_template=initial_prompt_template)
 
-    return normalize_response(chat,
-                              text)
+    def reset_chat():
+        chat = langchain_config(pipeline=pipeline, initial_prompt_template=initial_prompt_template)
+
+
+    def update_prompt(prompt):
+        chat.prompt.template = \
+            """%s
+      
+            Current conversation:
+            {history}
+            Human: {input}
+            AI:""" % prompt
+
+
+    with gr.Blocks() as demo:
+        gr.Markdown("GNTLM")
+        text_input = gr.Textbox(lines=2, label="Input", placeholder=text)
+        text_output = gr.inputs.Textbox(
+            lines=5,
+            label="Output",
+        )
+        text_button = gr.Button("Answer")
+
+        with gr.Accordion("Open for More!"):
+            gr.Markdown("More options")
+            forget_button = gr.Button("Forget me")
+            prompt_input = gr.Textbox(lines=5,
+                                      label="Input",
+                                      placeholder="The following is a conversation between a human and an guidance counseling AI. The AI is talkative and provides lots of specific details from its context and focuses on answering the question posed by the human. If the AI does not know the answer to a question, it truthfully says it does not know.")
+            update_prompt_button = gr.Button("Change initial prompt.")
+        text_button.click(normalize_response, inputs=text_input, outputs=text_output)
+        forget_button.click(reset_chat, inputs=chat)
+        update_prompt_button.click(update_prompt, inputs=prompt_input)
+
+    demo.launch()
 
 
 if __name__ == '__main__':
