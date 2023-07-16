@@ -120,7 +120,7 @@ def generate_pipeline(model,
     return generate_text
 
 
-def langchain_config(pipeline, initial_prompt_template: str=''):
+def langchain_config(pipeline, initial_prompt_template: str='') -> tuple:
 
     prompt = langchain.PromptTemplate(
         input_variables=["instruction"],
@@ -153,7 +153,7 @@ def langchain_config(pipeline, initial_prompt_template: str=''):
     else:
         chat.prompt.template = initial_prompt_template
 
-    return chat
+    return llm, memory, chat
 
 
 def main(text: str='',
@@ -175,25 +175,27 @@ def main(text: str='',
                                  temperature=temperature,
                                  max_new_tokens=max_new_tokens)
 
-    chat = langchain_config(pipeline=pipeline, initial_prompt_template=initial_prompt_template)
+    llm, memory, chat = langchain_config(pipeline=pipeline, initial_prompt_template=initial_prompt_template)
 
     def reset_chat():
-        chat = langchain_config(pipeline=pipeline, initial_prompt_template=initial_prompt_template)
-
+        chat = ConversationChain(
+            llm=llm,
+            memory=memory,
+            verbose=False
+        )
 
     def update_prompt(prompt):
         chat.prompt.template = \
             """%s
-      
+
             Current conversation:
             {history}
             Human: {input}
             AI:""" % prompt
 
-
     with gr.Blocks() as demo:
         gr.Markdown("GNTLM")
-        text_input = gr.Textbox(lines=2, label="Input", placeholder=text)
+        text_input = gr.Textbox(lines=2, label="Input", placeholder='none')
         text_output = gr.inputs.Textbox(
             lines=5,
             label="Output",
@@ -206,12 +208,12 @@ def main(text: str='',
             prompt_input = gr.Textbox(lines=5,
                                       label="Input",
                                       placeholder="The following is a conversation between a human and an guidance counseling AI. The AI is talkative and provides lots of specific details from its context and focuses on answering the question posed by the human. If the AI does not know the answer to a question, it truthfully says it does not know.")
-            update_prompt_button = gr.Button("Change initial prompt.")
+            update_prompt_button = gr.Button("Change initial prompt")
         text_button.click(normalize_response, inputs=text_input, outputs=text_output)
         forget_button.click(reset_chat)
         update_prompt_button.click(update_prompt, inputs=prompt_input)
 
-    demo.launch()
+    demo.queue().launch(debug=True)
 
 
 if __name__ == '__main__':
